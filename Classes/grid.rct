@@ -1,0 +1,14 @@
+// much grid
+// ---------
+// (this literally just draws the background)
+
+// Tiles here are 40x40 pixels
+// -> Window is 25x25 Tiles
+function DrawGrid() {
+    from (x <- 0) to 12 {
+        from (y <- 0) to 24  {
+            // this garbage just draws the background grid
+            DrawRectangle(x * 80 + (y % 2 = 0 ? 1 : 0) * 40, y * 40, 40, 40, make Color(20, 20, 20, 255));
+        }
+    }
+}

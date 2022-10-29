@@ -1,0 +1,26 @@
+// just a little util to keep track of textures so my gpu wont explode
+set TexturePoolKeys <- make string array(0);
+set TexturePoolValues <- make Texture array(0);
+
+// adding a texture to the dictionary
+function AddTexture(path string) {
+    var tex <- LoadTexture(path);
+    TexturePoolKeys->Push(path);
+    TexturePoolValues->Push(tex);
+}
+
+// getting a texture from the dictionary
+set function GetTexture(path string) Texture {
+    from (i <- 0) to TexturePoolKeys->GetLength() -1 {
+        if (TexturePoolKeys[i] = path) return TexturePoolValues[i];
+    }
+
+    return Texture(nil); // get borgered
+}
+
+// initializing all tile textures
+function LoadTileTextures() {
+    from (i <- 0) to TileSet->GetLength() -1 {
+        AddTexture(TileSet[i]->Graphic);
+    }
+}

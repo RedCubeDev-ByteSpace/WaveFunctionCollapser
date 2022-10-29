@@ -1,0 +1,147 @@
+package sys; use sys;
+
+class Tile {
+    set string Id;
+    set Openings <- make bool array(4);
+
+    function Constructor(id string, t bool, l bool, r bool, b bool) {
+        Id <- id;
+        Openings[0] <- t; Openings[1] <- l; Openings[2] <- r; Openings[3] <- b;
+    }
+}
+
+var tiles <- make Tile array {
+    make Tile("room_ccco.png",false,false,false,true),
+    make Tile("room_ccoc.png",false,false,true,false),
+    make Tile("room_ccoo.png",false,false,true,true),
+    make Tile("room_cocc.png",false,true,false,false),
+    make Tile("room_coco.png",false,true,false,true),
+    make Tile("room_cooc.png",false,true,true, false),
+    make Tile("room_cooo.png",false,true,true,true),
+    make Tile("room_occc.png",true,false,false,false),
+    make Tile("room_occo.png",true,false,false,true),
+    make Tile("room_ococ.png",true,false,true,false),
+    make Tile("room_ocoo.png",true,false,true,true),
+    make Tile("room_oocc.png",true,true,false,false),
+    make Tile("room_ooco.png",true,true,false,true),
+    make Tile("room_oooc.png",true,true,true,false),
+    make Tile("room_oooo.png",true,true,true,true)
+};
+
+Write("TLRB? (0-3): ");
+var tlrb <- int(Input());
+Write("Closed or open? (c/o): ");
+var co <- Input() = "o";
+
+from (i <- 0) to tiles->GetLength() -1 {
+    if (tiles[i]->Openings->At(tlrb) = co)
+    Write("""" + tiles[i]->Id + """,");
+}
+
+/*
+
+package sys; use sys;
+
+class Tile {
+    set string Id;
+    set Openings <- make bool array(4);
+
+    function Constructor(id string, t bool, l bool, r bool, b bool) {
+        Id <- id;
+        Openings[0] <- t; Openings[1] <- l; Openings[2] <- r; Openings[3] <- b;
+    }
+}
+
+var tiles <- make Tile array {
+    make Tile("room_ccco.png",false,false,false,true),
+    make Tile("room_ccoc.png",false,false,true,false),
+    make Tile("room_ccoo.png",false,false,true,true),
+    make Tile("room_cocc.png",false,true,false,false),
+    make Tile("room_coco.png",false,true,false,true),
+    make Tile("room_cooc.png",false,true,true, false),
+    make Tile("room_cooo.png",false,true,true,true),
+    make Tile("room_occc.png",true,false,false,false),
+    make Tile("room_occo.png",true,false,false,true),
+    make Tile("room_ococ.png",true,false,true,false),
+    make Tile("room_ocoo.png",true,false,true,true),
+    make Tile("room_oocc.png",true,true,false,false),
+    make Tile("room_ooco.png",true,true,false,true),
+    make Tile("room_oooc.png",true,true,true,false),
+    make Tile("room_oooo.png",true,true,true,true)
+};
+
+from (tile <- 0) to tiles->GetLength() -1 {
+    var me <- tiles[tile];
+
+    Print("// +"+ (me->Openings->At(0) ? "  " : "--") + "+");
+    Print("// "+ (me->Openings->At(1) ? " " : "|") + "  " + (me->Openings->At(2) ? " " : "|"));
+    Print("// +"+ (me->Openings->At(3) ? "  " : "--") + "+");
+    Print("make Tile(""./Resources/"+ me->Id +""", make any array{");
+
+    Write("    any(make string array {");
+
+    if (me->Openings->At(0)) Write("""spawn_bottom_mid"",");
+    else Write("""spawn_bottom_left"",""spawn_bottom_right"",");
+
+    from (i <- 0) to tiles->GetLength() -1 {
+        var other <- tiles[i];
+
+        if (me->Openings->At(0) = other->Openings->At(3) // TOP    1 = BOTTOM 2
+        ) Write("""" + tiles[i]->Id + """,");
+
+    }
+    Print("}),");
+
+    Write("    any(make string array {");
+
+    if (me->Openings->At(1)) Write("""spawn_center_right"",");
+    else Write("""spawn_top_right"",""spawn_bottom_right"",");
+
+    from (i <- 0) to tiles->GetLength() -1 {
+        var other <- tiles[i];
+
+        if (me->Openings->At(1) = other->Openings->At(2) // LEFT   1 = RIGHT  2
+        ) Write("""" + tiles[i]->Id + """,");
+
+    }
+    Print("}),");
+
+    Write("    any(make string array {");
+
+    if (me->Openings->At(2)) Write("""spawn_center_left"",");
+    else Write("""spawn_top_left"",""spawn_bottom_left"",");
+
+    from (i <- 0) to tiles->GetLength() -1 {
+        var other <- tiles[i];
+
+        if (me->Openings->At(2) = other->Openings->At(1) // RIGHT  1 = LEFT   2
+        ) Write("""" + tiles[i]->Id + """,");
+
+    }
+    Print("}),");
+
+    Write("    any(make string array {");
+
+    if (me->Openings->At(3)) Write("""spawn_top_mid"",");
+    else Write("""spawn_top_left"",""spawn_top_right"",");
+
+    from (i <- 0) to tiles->GetLength() -1 {
+        var other <- tiles[i];
+
+        if (me->Openings->At(3) = other->Openings->At(0) // BOTTOM 1 = TOP    2
+        ) Write("""" + tiles[i]->Id + """,");
+
+    }
+    Print("}),");
+    Print("}),\n");
+
+        //if (me->Openings[0] == other->Openings[3] // TOP    1 = BOTTOM 2
+        //    me->Openings[3] == other->Openings[0] // BOTTOM 1 = TOP    2
+        //    me->Openings[1] == other->Openings[2] // LEFT   1 = RIGHT  2
+        //    me->Openings[2] == other->Openings[1] // RIGHT  1 = LEFT   2
+        //) Write("""" + tiles[i]->Id + """,");
+}
+
+
+
+*/

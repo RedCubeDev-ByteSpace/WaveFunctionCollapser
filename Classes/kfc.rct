@@ -1,0 +1,314 @@
+// =============================================================================
+// Kwave Function Collapse (KFC)
+// =============================================================================
+
+// all our tilecontainers (25x25)
+set tilemap <- make TileContainer array(0);
+
+// initialize a shit ton of tile containers (effikanty👍)
+from (x <- 0) to 24
+from (y <- 0) to 24
+    tilemap->Push(make TileContainer(make Vector2(x * 40, y * 40)));
+
+// lil helper
+function TIndex(x int, y int) int {
+    return y + x * 25;
+}
+
+function DrawTileContainers() {
+    from (i <- 0) to 25 * 25 -1 {
+        tilemap[i]->Draw();
+    }
+}
+
+// =============================================================================
+// !! ACTUAL WFC STUFF !!
+// =============================================================================
+
+function CollapseMePlease() {
+    while (true) {
+        // refresh the possibilities for each tile
+        CheckValidity();
+
+        // find the tile with the lowest entropy
+        var container <- FindLowestEntropy();
+
+        // null = we done 🎉
+        if (container = TileContainer(nil))
+            break;
+
+        // randomly pick a possibility from the ones left
+        container->SelectedTile <- container->PossibleTiles->At(math::Random(container->PossibleTiles->GetLength()));
+        container->PossibleTiles <- make Tile array {container->SelectedTile};
+
+        //Sleep(1);
+    }
+}
+
+function ResetPossibilities() {
+    from (i <- 0) to 25 * 25 -1 {
+        if (tilemap[i]->SelectedTile = nil)
+            tilemap[i]->PossibleTiles <- TileSet;
+    }
+}
+
+function CheckValidity() {
+    ResetPossibilities();
+
+    // map to store the updated possibilities in
+    var newPossibilityMap <- make any array(tilemap->GetLength());
+
+    // this gamer right here will go through all tiles,
+    // all of their possibilities and then decide whats allowed for this tile
+    from (x <- 0) to 24
+    from (y <- 0) to 24 {
+        var container <- tilemap[TIndex(x,y)];
+
+        // is this tile already done?
+        // -> if so skip it
+        if (container->SelectedTile != nil) {
+            // map of this tile wont change
+            newPossibilityMap[TIndex(x,y)] <- container->PossibleTiles;
+
+            // skip
+            continue;
+        }
+
+        // i f   n o t
+        // -> iterate through all possibilities of it
+
+        // also: keep track of any possibilities which are deemed valid
+        var newPossibilities <- make Tile array(0);
+
+        from (i <- 0) to container->PossibleTiles->GetLength() -1 {
+            //Sleep(10);
+
+            // check if this possiblitiy is still allowed by
+            // checking all of its requirements
+            var possibility <- container->PossibleTiles->At(i);
+
+            // if this is a spawn tile -> skip (we only want one spawn)
+            if (possibility->Identifier->At(0) = "s") continue;
+
+            var checks <- make Vector2 array {
+                make Vector2( 0,-1), // top    (y -1)
+                make Vector2(-1, 0), // left   (x -1)
+                make Vector2( 1, 0), // right  (x +1)
+                make Vector2( 0, 1), // bottom (y +1)
+            };
+
+            // validity flag for all sides
+            var isValid <- true;
+
+            from (check <- 0) to 3 {
+                // calculate the coordinate we're checking at
+                var checkX <- x + int(checks[check]->X);
+                var checkY <- y + int(checks[check]->Y);
+
+                //Print("checkX: " + string(checkX) + "; checkY: " + string(checkY));
+
+                // if we're out of bounds, skip this check
+                if (checkX > 24 || checkX < 0 ||
+                    checkY > 24 || checkY < 0) {
+                    // skip
+                    continue;
+                }
+
+                //Print("doing check...");
+
+                // get the tile container we want to check against
+                var containerToCheck <- tilemap[TIndex(checkX, checkY)];
+
+                // the tiles this possibility allows on this side
+                // the stringArr conversion because rctc doesnt support smth like
+                // array[array[string]]
+                var allowedNeighbours <- stringArr(possibility->AllowedNeighbours->At(check));
+
+                // go through all tiles this allows on the current checking side
+                // -------------------------------------------------------------
+
+                // match found flag, if this is set, the possibility is valid for THIS direction
+                var matchFound <- allowedNeighbours->GetLength() = 0;
+
+                from (j <- 0) to allowedNeighbours->GetLength() -1 {
+                    var searchingForNeighbour <- allowedNeighbours[j];
+                    //Print("- checking if neighbour has: " + searchingForNeighbour);
+                    //Print(string(containerToCheck->PossibleTiles = nil));
+
+                    if (containerToCheck->PossibleTiles->GetLength() = 0) {
+                        matchFound <- true;
+                        break;
+                    }
+
+                    from (k <- 0) to containerToCheck->PossibleTiles->GetLength() -1 {
+                        //Print("  - Neighbour has: " + containerToCheck->PossibleTiles->At(k)->Identifier);
+                        if (searchingForNeighbour = containerToCheck->PossibleTiles->At(k)->Identifier) {
+                            matchFound <- true; // we did it bois 🎉
+                            break; // this shit is valid
+                        }
+                    }
+
+                    //Print("--");
+
+                    if (matchFound) break; // multi layer break; action goin on 
+                }
+
+                // is this valid?
+                if (!matchFound) {
+                    isValid <- false;
+                    //Print("INVALID");
+                    //die(0);
+                    break; // die() (no more checking needed)
+                }
+            }
+
+            // did this possibility survive?
+            if (isValid) {
+                // remember this one
+                newPossibilities->Push(possibility);
+            }
+        }
+
+        // store this new possibility map
+        newPossibilityMap[TIndex(x,y)] <- newPossibilities;
+    }
+
+    // replace the old possibility maps with this new one
+    from (i <- 0) to tilemap->GetLength() -1 {
+        tilemap[i]->PossibleTiles <- TileArr(newPossibilityMap[i]);
+    }
+}
+
+function FindLowestEntropy() TileContainer {
+    // "finding the tile with the lowest entropy" basically means:
+    // find the tile with the least options left to choose
+    // (if multiple tiles have the same level of entropy -> pick one randomly)
+    var tilesWithLowestEntropy <- make TileContainer array(0);
+
+    from (i <- 0) to tilemap->GetLength() -1 {
+        var container <- tilemap[i];
+
+        // if this one is already set -> skip
+        if (container->SelectedTile != nil) continue;
+
+        // if this one doesnt have any options -> skip
+        if (container->PossibleTiles->GetLength() = 0) continue;
+
+        // if our list is currently still empty -> just add this one
+        if (tilesWithLowestEntropy->GetLength() = 0) {
+            tilesWithLowestEntropy->Push(container);
+            continue;
+        }
+
+        // if its the same level of entropy -> add it
+        if (container->PossibleTiles->GetLength() = tilesWithLowestEntropy[0]->PossibleTiles->GetLength()) {
+            tilesWithLowestEntropy->Push(container);
+            continue;
+        }
+
+        // if we find an even lower level of entropy -> scrap all containers we saved
+        // start collecting containers of even lower entropy
+        if (container->PossibleTiles->GetLength() < tilesWithLowestEntropy[0]->PossibleTiles->GetLength()) {
+            tilesWithLowestEntropy <- make TileContainer array(1);
+            tilesWithLowestEntropy[0] <- container;
+            continue;
+        }
+    }
+
+    // if by the end of this we only have one container with the lowest entropy
+    // -> return that one
+    if (tilesWithLowestEntropy->GetLength() = 1)
+        return tilesWithLowestEntropy[0];
+
+    // if we dont have any tiles -> there arent any left
+    if (tilesWithLowestEntropy->GetLength() = 0)
+        return TileContainer(nil);
+
+    // if thats not the case (which its probably not)
+    // -> pick one at random
+    return tilesWithLowestEntropy[math::Random(tilesWithLowestEntropy->GetLength())];
+}
+
+// =============================================================================
+// Interface things
+// =============================================================================
+
+function CheckClick() {
+    // this is just interface stuff
+    // so uh not super interesting
+    if (IsMouseButtonPressed(0)) {
+        var mx <- GetMouseX();
+        var my <- GetMouseY();
+
+        // get tile coords
+        var x <- mx / 40;
+        var y <- my / 40;
+        var index <- TIndex(x,y);
+
+        // clicked tile is now spawn
+        var t <- tilemap[TIndex(x,y)];
+        t->SelectedTile <- TileSet[0];
+        t->PossibleTiles <- make Tile array {t->SelectedTile};
+
+        // very ugly spawn generation because i stopped caring
+        // ---------------------------------------------------
+
+        t <- tilemap[TIndex(x-1,y-1)];
+        t->SelectedTile <- TileSet[1];
+        t->PossibleTiles <- make Tile array {t->SelectedTile};
+
+        t <- tilemap[TIndex(x,y-1)];
+        t->SelectedTile <- TileSet[2];
+        t->PossibleTiles <- make Tile array {t->SelectedTile};
+
+        t <- tilemap[TIndex(x+1,y-1)];
+        t->SelectedTile <- TileSet[3];
+        t->PossibleTiles <- make Tile array {t->SelectedTile};
+
+        t <- tilemap[TIndex(x-1,y)];
+        t->SelectedTile <- TileSet[4];
+        t->PossibleTiles <- make Tile array {t->SelectedTile};
+
+        t <- tilemap[TIndex(x+1,y)];
+        t->SelectedTile <- TileSet[5];
+        t->PossibleTiles <- make Tile array {t->SelectedTile};
+
+        t <- tilemap[TIndex(x-1,y+1)];
+        t->SelectedTile <- TileSet[6];
+        t->PossibleTiles <- make Tile array {t->SelectedTile};
+
+        t <- tilemap[TIndex(x,y+1)];
+        t->SelectedTile <- TileSet[7];
+        t->PossibleTiles <- make Tile array {t->SelectedTile};
+
+        t <- tilemap[TIndex(x+1,y+1)];
+        t->SelectedTile <- TileSet[8];
+        t->PossibleTiles <- make Tile array {t->SelectedTile};
+
+        // run the algorithm
+        var thrd <- Thread(CollapseMePlease);
+        thrd->StartThread();
+
+        // UNUSED STUFF (keepin it for later)
+        // // get the inner index
+        // var ix <- math::Floor((mx % 40) / 12.0);
+        // var iy <- math::Floor((my % 40) / 12.0);
+        // var iindex <- ix + iy * 3;
+
+        // // make sure theres no death involved
+        // if (iindex > tilemap[index]->PossibleTiles->GetLength()) 
+        //     iindex <- tilemap[index]->PossibleTiles->GetLength() -1;
+
+        // //Print(string(iindex) + " at: " + string(ix) + "; " + string(iy));
+
+        // // burger
+        // tilemap[index]->SelectedTile <- tilemap[index]->PossibleTiles->At(iindex);
+        
+        // // just to make my life easier, set the PossibleTiles array to the selected one
+        // tilemap[index]->PossibleTiles <- make Tile array {tilemap[index]->SelectedTile};
+
+        // // run the algorithm
+        // var thrd <- Thread(CheckValidity);
+        // thrd->StartThread();
+    }
+}

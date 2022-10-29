@@ -1,0 +1,303 @@
+class TileContainer {
+    set SelectedTile <- Tile(nil);
+    set TileArr PossibleTiles;
+
+    set Vector2 TilePos;
+
+    function Constructor(tilePos Vector2) {
+        TilePos <- tilePos;
+
+        // this compiler sucks
+        LoadDefault();
+    }
+
+    function LoadDefault() {
+        // at the start, all tiles are allowed for this
+        PossibleTiles <- Main->TileSet;
+    }
+
+    set function Draw() {
+        // does this container already have a tile configured?
+        if (SelectedTile != nil)
+        {
+            // draw the tile
+            DrawTextureEx(Main->GetTexture(SelectedTile->Graphic), TilePos, 0, 2, make Color(255, 255, 255, 255));
+            return;
+        }
+
+        // try {
+        //     // if not, draw the possible values
+        //     from (i <- 0) to PossibleTiles->GetLength() -1 {
+        //         DrawTextureEx(Main->GetTexture(PossibleTiles[i]->Graphic), make Vector2(TilePos->X + (i % 3) * 12, TilePos->Y + int(i / 3) * 12), 0, 0.6, make Color(255, 255, 255, 255));
+        //     }
+        // }
+        // catch {
+        //     Print(string(PossibleTiles->GetLength()));
+        // }
+    }
+}
+
+class Tile {
+    set string Identifier;
+    set string Graphic;
+    set anyArr AllowedNeighbours; // top, left, right, bottom
+
+    function Constructor(graphic string, allowedNeighbours anyArr) {
+        Graphic <- graphic;
+        AllowedNeighbours <- allowedNeighbours;
+
+        // utterly calculate the identifier (big brain stuff)
+        var path <- graphic->Split("/");
+        var filename <- path[path->GetLength() -1];
+        Identifier <- filename->Split(".")->At(0); // dude rctc sucks ass
+    }
+}
+
+// im lazy so here are the special characters for copying:
+// ░ █
+
+set TileSet <- make Tile array {
+    // ░░░
+    // ░█░
+    // ░░░
+    make Tile("./Resources/spawn_center.png", make any array{
+        any(make string array {"spawn_top_mid"}), // top 
+        any(make string array {"spawn_center_left"}), // left 
+        any(make string array {"spawn_center_right"}), // right
+        any(make string array {"spawn_bottom_mid"}), // bottom
+    }),
+
+    // █░░
+    // ░░░
+    // ░░░
+    make Tile("./Resources/spawn_top_left.png", make any array{
+        any(make string array {"room_ccoc","room_cocc","room_cooc","room_occc","room_ococ","room_oocc","room_oooc"}), // top 
+        any(make string array {"room_ccco","room_cocc","room_coco","room_occc","room_occo","room_oocc","room_ooco"}), // left 
+        any(make string array {"spawn_top_mid"}), // right
+        any(make string array {"spawn_center_left"}), // bottom
+    }),
+
+    // ░█░
+    // ░░░
+    // ░░░
+    make Tile("./Resources/spawn_top_mid.png", make any array{
+        any(make string array {"room_ccco","room_ccoo","room_coco","room_cooo","room_occo","room_ocoo","room_ooco","room_oooo"}), // top 
+        any(make string array {"spawn_top_left"}), // left 
+        any(make string array {"spawn_top_right"}), // right
+        any(make string array {"spawn_center"}), // bottom
+    }),
+
+    // ░░█
+    // ░░░
+    // ░░░
+    make Tile("./Resources/spawn_top_right.png", make any array{
+        any(make string array {"room_ccoc","room_cocc","room_cooc","room_occc","room_ococ","room_oocc","room_oooc"}), // top 
+        any(make string array {"spawn_top_mid"}), // left 
+        any(make string array {"room_ccco","room_ccoc","room_ccoo","room_occc","room_occo","room_ococ","room_ocoo"}), // right
+        any(make string array {"spawn_center_right"}), // bottom
+    }),
+
+    // ░░░
+    // █░░
+    // ░░░
+    make Tile("./Resources/spawn_center_left.png", make any array{
+        any(make string array {"spawn_top_left"}), // top 
+        any(make string array {"room_ccoc","room_ccoo","room_cooc","room_cooo","room_ococ","room_ocoo","room_oooc","room_oooo"}), // left 
+        any(make string array {"spawn_center"}), // right
+        any(make string array {"spawn_bottom_left"}), // bottom
+    }),
+
+    // ░░░
+    // ░░█
+    // ░░░
+    make Tile("./Resources/spawn_center_right.png", make any array{
+        any(make string array {"spawn_top_right"}), // top 
+        any(make string array {"spawn_center"}), // left 
+        any(make string array {"room_cocc","room_coco","room_cooc","room_cooo","room_oocc","room_ooco","room_oooc","room_oooo"}), // right
+        any(make string array {"spawn_bottom_right"}), // bottom
+    }),
+
+    // ░░░
+    // ░░░
+    // █░░
+    make Tile("./Resources/spawn_bottom_left.png", make any array{
+        any(make string array {"spawn_center_left"}), // top 
+        any(make string array {"room_ccco","room_cocc","room_coco","room_occc","room_occo","room_oocc","room_ooco"}), // left 
+        any(make string array {"spawn_bottom_mid"}), // right
+        any(make string array {"room_ccco","room_ccoc","room_ccoo","room_cocc","room_coco","room_cooc","room_cooo"}), // bottom
+    }),
+
+    // ░░░
+    // ░░░
+    // ░█░
+    make Tile("./Resources/spawn_bottom_mid.png", make any array{
+        any(make string array {"spawn_center"}), // top 
+        any(make string array {"spawn_bottom_left"}), // left 
+        any(make string array {"spawn_bottom_right"}), // right
+        any(make string array {"room_occc","room_occo","room_ococ","room_ocoo","room_oocc","room_ooco","room_oooc","room_oooo"}), // bottom
+    }),
+
+    // ░░░
+    // ░░░
+    // ░░█
+    make Tile("./Resources/spawn_bottom_right.png", make any array{
+        any(make string array {"spawn_center_right"}), // top 
+        any(make string array {"spawn_bottom_mid"}), // left 
+        any(make string array {"room_ccco","room_ccoc","room_ccoo","room_occc","room_occo","room_ococ","room_ocoo"}), // right
+        any(make string array {"room_ccco","room_ccoc","room_ccoo","room_cocc","room_coco","room_cooc","room_cooo"}), // bottom
+    }),
+
+    //////////////////////
+    /// AUTO GENERATED ///
+    //////////////////////
+
+    // +--+
+    // |  |
+    // +  +
+    make Tile("./Resources/room_ccco.png", make any array{
+        any(make string array {"spawn_bottom_left","spawn_bottom_right","room_ccoc","room_cocc","room_cooc","room_occc","room_ococ","room_oocc","room_oooc",}),
+        any(make string array {"spawn_top_right","spawn_bottom_right","room_ccco","room_cocc","room_coco","room_occc","room_occo","room_oocc","room_ooco",}),
+        any(make string array {"spawn_top_left","spawn_bottom_left","room_ccco","room_ccoc","room_ccoo","room_occc","room_occo","room_ococ","room_ocoo",}),
+        any(make string array {"spawn_top_mid","room_occc","room_occo","room_ococ","room_ocoo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+    }),
+
+    // +--+
+    // |
+    // +--+
+    make Tile("./Resources/room_ccoc.png", make any array{
+        any(make string array {"spawn_bottom_left","spawn_bottom_right","room_ccoc","room_cocc","room_cooc","room_occc","room_ococ","room_oocc","room_oooc",}),
+        any(make string array {"spawn_top_right","spawn_bottom_right","room_ccco","room_cocc","room_coco","room_occc","room_occo","room_oocc","room_ooco",}),
+        any(make string array {"spawn_center_left","room_cocc","room_coco","room_cooc","room_cooo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_left","spawn_top_right","room_ccco","room_ccoc","room_ccoo","room_cocc","room_coco","room_cooc","room_cooo",}),
+    }),
+
+    // +--+
+    // |
+    // +  +
+    make Tile("./Resources/room_ccoo.png", make any array{
+        any(make string array {"spawn_bottom_left","spawn_bottom_right","room_ccoc","room_cocc","room_cooc","room_occc","room_ococ","room_oocc","room_oooc",}),
+        any(make string array {"spawn_top_right","spawn_bottom_right","room_ccco","room_cocc","room_coco","room_occc","room_occo","room_oocc","room_ooco",}),
+        any(make string array {"spawn_center_left","room_cocc","room_coco","room_cooc","room_cooo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_mid","room_occc","room_occo","room_ococ","room_ocoo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+    }),
+
+    // +--+
+    //    |
+    // +--+
+    make Tile("./Resources/room_cocc.png", make any array{
+        any(make string array {"spawn_bottom_left","spawn_bottom_right","room_ccoc","room_cocc","room_cooc","room_occc","room_ococ","room_oocc","room_oooc",}),
+        any(make string array {"spawn_center_right","room_ccoc","room_ccoo","room_cooc","room_cooo","room_ococ","room_ocoo","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_left","spawn_bottom_left","room_ccco","room_ccoc","room_ccoo","room_occc","room_occo","room_ococ","room_ocoo",}),
+        any(make string array {"spawn_top_left","spawn_top_right","room_ccco","room_ccoc","room_ccoo","room_cocc","room_coco","room_cooc","room_cooo",}),
+    }),
+
+    // +--+
+    //    |
+    // +  +
+    make Tile("./Resources/room_coco.png", make any array{
+        any(make string array {"spawn_bottom_left","spawn_bottom_right","room_ccoc","room_cocc","room_cooc","room_occc","room_ococ","room_oocc","room_oooc",}),
+        any(make string array {"spawn_center_right","room_ccoc","room_ccoo","room_cooc","room_cooo","room_ococ","room_ocoo","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_left","spawn_bottom_left","room_ccco","room_ccoc","room_ccoo","room_occc","room_occo","room_ococ","room_ocoo",}),
+        any(make string array {"spawn_top_mid","room_occc","room_occo","room_ococ","room_ocoo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+    }),
+
+    // +--+
+    //
+    // +--+
+    make Tile("./Resources/room_cooc.png", make any array{
+        any(make string array {"spawn_bottom_left","spawn_bottom_right","room_ccoc","room_cocc","room_cooc","room_occc","room_ococ","room_oocc","room_oooc",}),
+        any(make string array {"spawn_center_right","room_ccoc","room_ccoo","room_cooc","room_cooo","room_ococ","room_ocoo","room_oooc","room_oooo",}),
+        any(make string array {"spawn_center_left","room_cocc","room_coco","room_cooc","room_cooo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_left","spawn_top_right","room_ccco","room_ccoc","room_ccoo","room_cocc","room_coco","room_cooc","room_cooo",}),
+    }),
+
+    // +--+
+    //
+    // +  +
+    make Tile("./Resources/room_cooo.png", make any array{
+        any(make string array {"spawn_bottom_left","spawn_bottom_right","room_ccoc","room_cocc","room_cooc","room_occc","room_ococ","room_oocc","room_oooc",}),
+        any(make string array {"spawn_center_right","room_ccoc","room_ccoo","room_cooc","room_cooo","room_ococ","room_ocoo","room_oooc","room_oooo",}),
+        any(make string array {"spawn_center_left","room_cocc","room_coco","room_cooc","room_cooo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_mid","room_occc","room_occo","room_ococ","room_ocoo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+    }),
+
+    // +  +
+    // |  |
+    // +--+
+    make Tile("./Resources/room_occc.png", make any array{
+        any(make string array {"spawn_bottom_mid","room_ccco","room_ccoo","room_coco","room_cooo","room_occo","room_ocoo","room_ooco","room_oooo",}),
+        any(make string array {"spawn_top_right","spawn_bottom_right","room_ccco","room_cocc","room_coco","room_occc","room_occo","room_oocc","room_ooco",}),
+        any(make string array {"spawn_top_left","spawn_bottom_left","room_ccco","room_ccoc","room_ccoo","room_occc","room_occo","room_ococ","room_ocoo",}),
+        any(make string array {"spawn_top_left","spawn_top_right","room_ccco","room_ccoc","room_ccoo","room_cocc","room_coco","room_cooc","room_cooo",}),
+    }),
+
+    // +  +
+    // |  |
+    // +  +
+    make Tile("./Resources/room_occo.png", make any array{
+        any(make string array {"spawn_bottom_mid","room_ccco","room_ccoo","room_coco","room_cooo","room_occo","room_ocoo","room_ooco","room_oooo",}),
+        any(make string array {"spawn_top_right","spawn_bottom_right","room_ccco","room_cocc","room_coco","room_occc","room_occo","room_oocc","room_ooco",}),
+        any(make string array {"spawn_top_left","spawn_bottom_left","room_ccco","room_ccoc","room_ccoo","room_occc","room_occo","room_ococ","room_ocoo",}),
+        any(make string array {"spawn_top_mid","room_occc","room_occo","room_ococ","room_ocoo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+    }),
+
+    // +  +
+    // |
+    // +--+
+    make Tile("./Resources/room_ococ.png", make any array{
+        any(make string array {"spawn_bottom_mid","room_ccco","room_ccoo","room_coco","room_cooo","room_occo","room_ocoo","room_ooco","room_oooo",}),
+        any(make string array {"spawn_top_right","spawn_bottom_right","room_ccco","room_cocc","room_coco","room_occc","room_occo","room_oocc","room_ooco",}),
+        any(make string array {"spawn_center_left","room_cocc","room_coco","room_cooc","room_cooo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_left","spawn_top_right","room_ccco","room_ccoc","room_ccoo","room_cocc","room_coco","room_cooc","room_cooo",}),
+    }),
+
+    // +  +
+    // |
+    // +  +
+    make Tile("./Resources/room_ocoo.png", make any array{
+        any(make string array {"spawn_bottom_mid","room_ccco","room_ccoo","room_coco","room_cooo","room_occo","room_ocoo","room_ooco","room_oooo",}),
+        any(make string array {"spawn_top_right","spawn_bottom_right","room_ccco","room_cocc","room_coco","room_occc","room_occo","room_oocc","room_ooco",}),
+        any(make string array {"spawn_center_left","room_cocc","room_coco","room_cooc","room_cooo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_mid","room_occc","room_occo","room_ococ","room_ocoo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+    }),
+
+    // +  +
+    //    |
+    // +--+
+    make Tile("./Resources/room_oocc.png", make any array{
+        any(make string array {"spawn_bottom_mid","room_ccco","room_ccoo","room_coco","room_cooo","room_occo","room_ocoo","room_ooco","room_oooo",}),
+        any(make string array {"spawn_center_right","room_ccoc","room_ccoo","room_cooc","room_cooo","room_ococ","room_ocoo","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_left","spawn_bottom_left","room_ccco","room_ccoc","room_ccoo","room_occc","room_occo","room_ococ","room_ocoo",}),
+        any(make string array {"spawn_top_left","spawn_top_right","room_ccco","room_ccoc","room_ccoo","room_cocc","room_coco","room_cooc","room_cooo",}),
+    }),
+
+    // +  +
+    //    |
+    // +  +
+    make Tile("./Resources/room_ooco.png", make any array{
+        any(make string array {"spawn_bottom_mid","room_ccco","room_ccoo","room_coco","room_cooo","room_occo","room_ocoo","room_ooco","room_oooo",}),
+        any(make string array {"spawn_center_right","room_ccoc","room_ccoo","room_cooc","room_cooo","room_ococ","room_ocoo","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_left","spawn_bottom_left","room_ccco","room_ccoc","room_ccoo","room_occc","room_occo","room_ococ","room_ocoo",}),
+        any(make string array {"spawn_top_mid","room_occc","room_occo","room_ococ","room_ocoo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+    }),
+
+    // +  +
+    //
+    // +--+
+    make Tile("./Resources/room_oooc.png", make any array{
+        any(make string array {"spawn_bottom_mid","room_ccco","room_ccoo","room_coco","room_cooo","room_occo","room_ocoo","room_ooco","room_oooo",}),
+        any(make string array {"spawn_center_right","room_ccoc","room_ccoo","room_cooc","room_cooo","room_ococ","room_ocoo","room_oooc","room_oooo",}),
+        any(make string array {"spawn_center_left","room_cocc","room_coco","room_cooc","room_cooo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_left","spawn_top_right","room_ccco","room_ccoc","room_ccoo","room_cocc","room_coco","room_cooc","room_cooo",}),
+    }),
+
+    // +  +
+    //
+    // +  +
+    make Tile("./Resources/room_oooo.png", make any array{
+        any(make string array {"spawn_bottom_mid","room_ccco","room_ccoo","room_coco","room_cooo","room_occo","room_ocoo","room_ooco","room_oooo",}),
+        any(make string array {"spawn_center_right","room_ccoc","room_ccoo","room_cooc","room_cooo","room_ococ","room_ocoo","room_oooc","room_oooo",}),
+        any(make string array {"spawn_center_left","room_cocc","room_coco","room_cooc","room_cooo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+        any(make string array {"spawn_top_mid","room_occc","room_occo","room_ococ","room_ocoo","room_oocc","room_ooco","room_oooc","room_oooo",}),
+    }),
+};

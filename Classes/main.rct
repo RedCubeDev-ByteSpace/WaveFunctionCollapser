@@ -1,0 +1,45 @@
+// waveFunctionCollapserAaAaAaAaAaAAAAAAAAA - ReCT v2.3.1.9 
+package sys; use sys;
+package math;
+package dll Relib; use Relib;
+
+// Rlb 👍
+#copy("raylib.dll");
+#copy("Raylib-cs.dll");
+
+// resources
+#copyFolder("$CWD/Resources");
+
+// funky files
+#attach("grid.rct");
+#attach("tiles.rct");
+#attach("kfc.rct");
+#attach("textureManager.rct");
+
+// meak windwo
+InitWindow(1000, 1000, "wave function go boom");
+
+// this really doesnt need to be quick
+SetTargetFPS(30);
+
+// load them tile textures
+LoadTileTextures();
+
+while (!WindowShouldClose()) {
+    BeginDrawing();
+    ClearBackground(make Color(0,0,0,0));
+
+    // background
+    DrawGrid();
+
+    // tiles
+    DrawTileContainers();
+
+    // click handler
+    CheckClick();
+
+    EndDrawing();
+}
+
+CloseWindow();
+die(0);
